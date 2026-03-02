@@ -1,0 +1,415 @@
+index.html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>专属告白</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #ffe6f0;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: "Microsoft YaHei", sans-serif;
+            touch-action: manipulation; /* 优化移动端点击 */
+        }
+        /* 爱心动画容器 */
+        .heart-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        /* 爱心样式 */
+        .heart {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #ff3366;
+            transform: rotate(45deg);
+            animation: float 6s ease-in-out infinite;
+            opacity: 0;
+        }
+        .heart::before, .heart::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #ff3366;
+            border-radius: 50%;
+        }
+        .heart::before {
+            top: -10px;
+            left: 0;
+        }
+        .heart::after {
+            top: 0;
+            left: -10px;
+        }
+        /* 点击爱心缩放动画 */
+        .click-heart {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #ff3366;
+            transform: rotate(45deg);
+            opacity: 1;
+            pointer-events: none;
+            animation: scale 1s ease-out forwards;
+        }
+        .click-heart::before, .click-heart::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #ff3366;
+            border-radius: 50%;
+        }
+        .click-heart::before {
+            top: -15px;
+            left: 0;
+        }
+        .click-heart::after {
+            top: 0;
+            left: -15px;
+        }
+        /* 动画定义 */
+        @keyframes float {
+            0% {
+                transform: rotate(45deg) translateY(100vh) scale(0.3);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: rotate(45deg) translateY(-50px) scale(0.3);
+                opacity: 0;
+            }
+        }
+        @keyframes scale {
+            0% { transform: rotate(45deg) scale(1); }
+            50% { transform: rotate(45deg) scale(1.5); }
+            100% { transform: rotate(45deg) scale(0); opacity: 0; }
+        }
+        /* 内容盒子 */
+        .text-box {
+            z-index: 2;
+            text-align: center;
+            padding: 0 20px;
+            max-width: 80%;
+        }
+        .title {
+            font-size: 28px;
+            color: #ff3366;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .content {
+            font-size: 18px;
+            color: #333;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+        /* 按钮组 */
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 12px 30px;
+            background-color: #ff3366;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #e62958;
+            transform: scale(1.05);
+        }
+        .btn-secondary {
+            background-color: #ff99bb;
+        }
+        .btn-secondary:hover {
+            background-color: #ff80aa;
+        }
+        /* 心动值进度条 */
+        .progress-box {
+            width: 100%;
+            margin: 20px 0;
+            display: none;
+        }
+        .progress-title {
+            font-size: 16px;
+            color: #ff3366;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #ff3366;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background-color: #ff3366;
+            border-radius: 8px;
+            transition: width 1s ease;
+        }
+        /* 手写签名区域 */
+        .signature-box {
+            width: 100%;
+            margin: 20px 0;
+            display: none;
+        }
+        .signature-title {
+            font-size: 16px;
+            color: #ff3366;
+            margin-bottom: 10px;
+        }
+        #signatureCanvas {
+            width: 100%;
+            height: 120px;
+            background-color: #fff;
+            border-radius: 10px;
+            border: 2px dashed #ff3366;
+        }
+        .signature-btn {
+            margin-top: 10px;
+            padding: 8px 20px;
+            font-size: 14px;
+        }
+        /* 隐藏元素 */
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- 爱心动画容器 -->
+    <div class="heart-container" id="heartContainer"></div>
+
+    <!-- 告白文字区域 -->
+    <div class="text-box">
+        <h1 class="title">💘 写给你的告白 💘</h1>
+        <p class="content" id="mainContent">
+            遇见你，是我所有美好故事的开始<br>
+            想和你一起看遍山川湖海<br>
+            想把所有温柔都给你<br>
+            你愿意和我在一起吗？
+        </p>
+        
+        <!-- 二选一按钮组 -->
+        <div class="btn-group" id="optionGroup">
+            <button class="btn" id="yesBtn">我愿意 ❤️</button>
+            <button class="btn btn-secondary" id="noBtn">再考虑下 🥺</button>
+        </div>
+        
+        <!-- 心动值进度条 -->
+        <div class="progress-box" id="progressBox">
+            <div class="progress-title">💓 心动值加载中...</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+        
+        <!-- 手写签名区域 -->
+        <div class="signature-box" id="signatureBox">
+            <div class="signature-title">✍️ 签下你的名字，确认心意～</div>
+            <canvas id="signatureCanvas"></canvas>
+            <div class="btn-group">
+                <button class="btn signature-btn" id="clearBtn">清空重签</button>
+                <button class="btn signature-btn" id="confirmBtn">确认签名 💖</button>
+            </div>
+        </div>
+        
+        <!-- 最终确认按钮（初始隐藏） -->
+        <button class="btn hidden" id="loveBtn">永远在一起 💞</button>
+    </div>
+
+    <!-- 背景音乐（替换成自己的音乐链接） -->
+    <audio id="music" loop>
+        <source src="https://example.com/love-music.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // 1. 基础爱心生成
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.className = 'heart';
+            const left = Math.random() * 100;
+            const size = Math.random() * 15 + 10;
+            const duration = Math.random() * 6 + 4;
+            
+            heart.style.left = `${left}%`;
+            heart.style.width = `${size}px`;
+            heart.style.height = `${size}px`;
+            heart.style.animationDuration = `${duration}s`;
+            heart.style.animationDelay = `${Math.random() * 5}s`;
+            
+            const container = document.getElementById('heartContainer');
+            container.appendChild(heart);
+            setTimeout(() => heart.remove(), duration * 1000);
+        }
+        setInterval(createHeart, 300);
+
+        // 2. 点击页面撒爱心
+        document.addEventListener('click', function(e) {
+            const clickHeart = document.createElement('div');
+            clickHeart.className = 'click-heart';
+            clickHeart.style.left = `${e.clientX - 15}px`;
+            clickHeart.style.top = `${e.clientY - 15}px`;
+            document.body.appendChild(clickHeart);
+            setTimeout(() => clickHeart.remove(), 1000);
+        });
+
+        // 3. 二选一互动逻辑
+        const yesBtn = document.getElementById('yesBtn');
+        const noBtn = document.getElementById('noBtn');
+        const optionGroup = document.getElementById('optionGroup');
+        const progressBox = document.getElementById('progressBox');
+        const progressFill = document.getElementById('progressFill');
+        const signatureBox = document.getElementById('signatureBox');
+        const loveBtn = document.getElementById('loveBtn');
+        const mainContent = document.getElementById('mainContent');
+        
+        // "我愿意"按钮逻辑
+        yesBtn.addEventListener('click', function() {
+            // 播放音乐
+            const music = document.getElementById('music');
+            music.play().catch(err => console.log('音乐需要用户交互:', err));
+            
+            // 隐藏选项，显示进度条
+            optionGroup.style.display = 'none';
+            progressBox.style.display = 'block';
+            
+            // 加载心动值进度条
+            let progress = 0;
+            const progressTimer = setInterval(() => {
+                progress += 10;
+                progressFill.style.width = `${progress}%`;
+                
+                // 进度条加载完成
+                if (progress >= 100) {
+                    clearInterval(progressTimer);
+                    setTimeout(() => {
+                        progressBox.style.display = 'none';
+                        signatureBox.style.display = 'block';
+                        mainContent.innerHTML = '💖 太好啦！签下你的名字，我们就是彼此的啦～';
+                    }, 1000);
+                }
+            }, 300);
+        });
+        
+        // "再考虑下"按钮逻辑（趣味躲按钮）
+        noBtn.addEventListener('click', function() {
+            // 随机移动按钮位置
+            const maxLeft = window.innerWidth - 150;
+            const maxTop = window.innerHeight - 100;
+            const randomLeft = Math.random() * maxLeft;
+            const randomTop = Math.random() * maxTop;
+            
+            noBtn.style.position = 'absolute';
+            noBtn.style.left = `${randomLeft}px`;
+            noBtn.style.top = `${randomTop}px`;
+            
+            // 提示文字
+            mainContent.innerHTML = '🥺 别跑呀～再考虑考虑嘛～';
+        });
+
+        // 4. 手写签名功能
+        const canvas = document.getElementById('signatureCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        
+        // 适配canvas尺寸
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // 开始绘画
+        canvas.addEventListener('touchstart', function(e) {
+            isDrawing = true;
+            const touch = e.touches[0];
+            lastX = touch.clientX - canvas.getBoundingClientRect().left;
+            lastY = touch.clientY - canvas.getBoundingClientRect().top;
+        });
+        
+        // 绘画中
+        canvas.addEventListener('touchmove', function(e) {
+            if (!isDrawing) return;
+            e.preventDefault(); // 阻止页面滚动
+            const touch = e.touches[0];
+            const x = touch.clientX - canvas.getBoundingClientRect().left;
+            const y = touch.clientY - canvas.getBoundingClientRect().top;
+            
+            // 绘制线条
+            ctx.beginPath();
+            ctx.strokeStyle = '#ff3366';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            
+            lastX = x;
+            lastY = y;
+        });
+        
+        // 结束绘画
+        canvas.addEventListener('touchend', function() {
+            isDrawing = false;
+        });
+        
+        // 清空签名
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+        
+        // 确认签名
+        document.getElementById('confirmBtn').addEventListener('click', function() {
+            signatureBox.style.display = 'none';
+            loveBtn.classList.remove('hidden');
+            mainContent.innerHTML = `
+                余生漫漫，皆是你<br>
+                愿我们岁岁年年，朝朝暮暮<br>
+                爱你不止一点点 ❤️
+            `;
+        });
+
+        // 5. 微信音乐自动播放兼容
+        document.addEventListener('touchstart', function() {
+            const music = document.getElementById('music');
+            music.play().catch(err => {});
+        }, { once: true });
+    </script>
+</body>
+</html>
